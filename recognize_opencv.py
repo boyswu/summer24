@@ -2,7 +2,6 @@ import os
 import cv2
 import numpy as np
 
-
 def recognize_opencv():
     # 循环读取文件夹中的所有图片
     lens = len(os.listdir(r"D:/pycharm_project/summer24/223"))
@@ -39,10 +38,6 @@ def recognize_opencv():
         if cv2.waitKey(0) & 0xFF == ord('q'):
             cv2.destroyAllWindows()
             return 0
-
-
-
-
-
+###
 if __name__ == '__main__':
     recognize_opencv()
