@@ -10,28 +10,41 @@
 
 **写法**:
 
- mask = cv2.inRange(hsv, lower_green, upper_green)
+```
+mask = cv2.inRange(hsv, lower_green, upper_green)
+```
 
 ***参数解释***：
 
 - `hsv`：输入的 HSV 颜色空间的图像。
-- `lower_green`：一个 NumPy 数组，表示绿色范围的下限。
-- `upper_green`：一个 NumPy 数组，表示绿色范围的上限。
+- lower_green指的是图像中低于这个lower_red的值，图像值变为0
+- upper_green指的是图像中高于这个upper_red的值，图像值变为0
+- 而在lower_red～upper_red之间的值变成255
 
 **作用**
 
-可以在图像中查找位于指定范围内的像素，该函数返回一个二值图像。
+可以在图像中查找位于指定范围内的像素，该函数返回一个二值图像（只有黑白两种颜色）。
 
-###2.**cv2.bitwise_and 函数**
+利用cv2.inRange函数设阈值提取特定的颜色区域，去除背景部分。
+
+###2. opencv按位与运算**cv2.bitwise_and 函数**
+
+***什么是按位与操作***
+
+按位与操作是指对两幅图像的像素进行逐位比较，当且仅当两幅图像的对应像素值都为1时，结果图像的对应像素值才为1；否则为0。这种操作常用于图像融合、[掩码](https://so.csdn.net/so/search?q=%E6%8E%A9%E7%A0%81&spm=1001.2101.3001.7020)操作等场景。
 
 **写法**: 
 
-green_image = cv2.bitwise_and(image, image, mask=mask)
+```
+green_image = cv2.bitwise_and(src1, src2, dst=None, mask=None)
+```
 
 **参数解释**：
 
-- `image`：这是第一个输入图像，也是第二个输入图像。因为 `cv2.bitwise_and` 需要两个输入图像，这里我们使用同一个图像 `image` 作为两个输入。
-- `mask=mask`：这是一个掩码图像，用于指定哪些像素需要进行按位与操作。只有掩码图像中对应位置为非零的像素才会被处理。
+- src1：第一幅输入图像 
+- src2：第二幅输入图像
+- dst：可选参数，输出图像，与输入图像具有相同的尺寸和数据类型
+- mask：可选参数，掩码图像，用于指定哪些像素进行按位与操作
 
 **作用**
 

@@ -19,6 +19,7 @@ green_image = cv2.bitwise_and(image, image, mask=mask)
 
 # 显示处理后的图像
 
+
 cv2.namedWindow('Original Image', 0)
 cv2.resizeWindow('Original Image', 600, 500)
 cv2.imshow('Original Image', image)
