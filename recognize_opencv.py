@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # 读取图片
-image = cv2.imread('2.jpg')
+image = cv2.imread('1.jpg')
 
 # 将图片从BGR转换为HSV颜色空间
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -17,13 +17,15 @@ mask = cv2.inRange(hsv, lower_green, upper_green)
 # 将掩码应用于原始图像，得到只有绿色区域的图像
 green_image = cv2.bitwise_and(image, image, mask=mask)
 
-# 将非绿色区域涂黑
-black_image = cv2.bitwise_not(mask)
-black_image = cv2.bitwise_and(image, image, mask=black_image)
-
 # 显示处理后的图像
+
+cv2.namedWindow('Original Image', 0)
+cv2.resizeWindow('Original Image', 600, 500)
 cv2.imshow('Original Image', image)
+
+cv2.namedWindow('Green Image', 0)
+cv2.resizeWindow('Green Image', 600, 500)
 cv2.imshow('Green Image', green_image)
-cv2.imshow('Black Image', black_image)
+
 cv2.waitKey(0)
 cv2.destroyAllWindows()
