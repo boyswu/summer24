@@ -171,7 +171,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             templates[value] = cv2.GaussianBlur(templates[value], (5, 5), 0)
             # cv2.imshow(str(value), templates[value])
             # cv2.waitKey(0)
-            # templates[value] = cv2.resize(templates[value], (400,600))
+            templates[value] = cv2.resize(templates[value], (400,600))
         # 读取目标图像并进行预处理
         # img = self.recognize()
 
@@ -190,25 +190,28 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         roi = self.reduce_img(img, image)
         contours, _ = cv2.findContours(roi, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         # cv2.drawContours(roi, contours, -1, (0, 0, 255), 2)
-        # cv2.imshow("roi", roi)
-        # cv2.waitKey(0)
+        cv2.imshow("roi", roi)
+        cv2.waitKey(0)
         # 遍历轮廓并进行模板匹配
         for contour in contours:
             # 计算轮廓的边界框
             x, y, w, h = cv2.boundingRect(contour)
             # 绘制矩形框
-            img = cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            img = self.reduce_img(image, img)
+            cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            img = roi[y:y + h, x:x + w]
+            cv2.imshow("img", img)
+            cv2.waitKey(0)
             # 保存起来后面再次imread转成灰度图进行模板匹配
-            cv2.imwrite('result.jpg', img)
+            # 保存起来后面再次imread转成灰度图进行模板匹配
+            cv2.imwrite('jietu.jpg', img)
             # 切割图片
             best_match = -1
             best_score = float('-inf')  # 改为负无穷，因为cv2.TM_CCOEFF_NORMED的score越高越好
             # 遍历模板
             for value, template in templates.items():  # 直接遍历字典的键值对,value 是字典的键，template 是字典的值
                 # 匹配模板
-                img = cv2.imread('result.jpg', 0)
-                # img = cv2.resize(img, (400, 600))
+                img = cv2.imread('jietu.jpg', 0)
+                img = cv2.resize(img, (400, 600))
                 # cv2.imshow("res", res)
                 res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
                 _, score, _, _ = cv2.minMaxLoc(res)
@@ -221,6 +224,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
                     # self.frame = cv2.putText(roi, str(self.best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1,
                     #                          (0, 255, 0), 2)
                     print("匹配到数字：", self.best_match)
+
 
                     self.textEdit.append(str(self.best_match))
                     img = self.label_img(roi)
