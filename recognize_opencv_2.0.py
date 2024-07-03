@@ -171,7 +171,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             templates[value] = cv2.GaussianBlur(templates[value], (5, 5), 0)
             # cv2.imshow(str(value), templates[value])
             # cv2.waitKey(0)
-            templates[value] = cv2.resize(templates[value], (400,600))
+            templates[value] = cv2.resize(templates[value], (400, 600))
         # 读取目标图像并进行预处理
         # img = self.recognize()
 
@@ -190,8 +190,8 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         roi = self.reduce_img(img, image)
         contours, _ = cv2.findContours(roi, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         # cv2.drawContours(roi, contours, -1, (0, 0, 255), 2)
-        cv2.imshow("roi", roi)
-        cv2.waitKey(0)
+        # cv2.imshow("roi", roi)
+        # cv2.waitKey(0)
         # 遍历轮廓并进行模板匹配
         for contour in contours:
             # 计算轮廓的边界框
@@ -199,8 +199,8 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             # 绘制矩形框
             cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
             img = roi[y:y + h, x:x + w]
-            cv2.imshow("img", img)
-            cv2.waitKey(0)
+            # cv2.imshow("img", img)
+            # cv2.waitKey(0)
             # 保存起来后面再次imread转成灰度图进行模板匹配
             # 保存起来后面再次imread转成灰度图进行模板匹配
             cv2.imwrite('jietu.jpg', img)
@@ -208,7 +208,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             best_match = -1
             best_score = float('-inf')  # 改为负无穷，因为cv2.TM_CCOEFF_NORMED的score越高越好
             # 遍历模板
-            for value, template in templates.items():  # 直接遍历字典的键值对,value 是字典的键，template 是字典的值
+            for value, template in templates.items():  # 遍历模板，value为模板值，template为模板图片
                 # 匹配模板
                 img = cv2.imread('jietu.jpg', 0)
                 img = cv2.resize(img, (400, 600))
@@ -225,16 +225,18 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
                     #                          (0, 255, 0), 2)
                     print("匹配到数字：", self.best_match)
 
-
                     self.textEdit.append(str(self.best_match))
+                    img = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
+                    roi= cv2.putText(img, str(self.best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
                     img = self.label_img(roi)
+
                     self.after_photo.setFixedSize(500, 300)  # 设置你希望的固定大小
                     self.after_photo.setPixmap(QtGui.QPixmap.fromImage(img))
 
                 if best_match == -1:  # 没有匹配到任何模板
-                    unknown = "没有匹配到任何模板"
-                    self.textEdit.append(unknown)
-                    print(unknown)
+                    # unknown = "没有匹配到任何模板"
+                    # self.textEdit.append(unknown)
+                    # print(unknown)
                     continue
 
 
