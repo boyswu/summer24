@@ -1,3 +1,5 @@
+import queue
+import threading
 import cv2
 import numpy as np
 from PyQt5.QtWidgets import QFileDialog
@@ -5,15 +7,17 @@ import os
 from UI import Ui_MainWindow
 from PyQt5 import QtWidgets, QtGui
 
+
 class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super(recognize_figure, self).__init__(parent)
+        self.best_match = ''
         self.setupUi(self)
 
         self.cwd = os.getcwd()  # 获取当前程序文件位置
         self.before_photo.setScaledContents(True)  # 图片自适应大小
         self.after_photo.setScaledContents(True)  # 图片自适应大小
-
+        self.result_queue = queue.Queue()  # 队列
 
         self.goal_file.clicked.connect(self.open_file)
         self.start.clicked.connect(self.mode_match)
@@ -30,11 +34,17 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             self.path = path[0]
             # 读取图像
             image = cv2.imread(self.path)
+
             img = self.label_img(image)
-            #图片大小固定
+            # 固定 QLabel 的大小
+            self.before_photo.setFixedSize(500, 300)  # 设置你希望的固定大小
             self.before_photo.setPixmap(QtGui.QPixmap.fromImage(img))
 
             return path
+
+    def recognize_wrapper(self):
+        result = self.recognize()
+        self.result_queue.put(result)
 
     def label_img(self, img):
 
@@ -42,6 +52,18 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         img = QtGui.QImage(img.data, img.shape[1], img.shape[0],
                            int(img.shape[1]) * 3,
                            QtGui.QImage.Format_RGB888)  # 把读取到的视频数据变成QImage形式
+        return img
+
+    def reduce_img(self, image, img):  # image原图，img为框出矩阵后的图片
+        cnts = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]  # 获取图片中的轮廓
+        c = max(cnts, key=cv2.contourArea)  # 在边界中找出面积最大的区域
+        rect = cv2.minAreaRect(c)  # 绘制出该区域的最小外接矩形
+        box = cv2.boxPoints(rect)  # 记录该矩形四个点的位置坐标
+        box = np.intp(box)  # 将坐标转化为整数
+
+        x, y, w, h = cv2.boundingRect(box)  # 获取最小外接轴对齐矩形的坐标
+
+        img = image[y:y + h, x:x + w]  # 获取roi区域
         return img
 
     def recognize(self):
@@ -56,24 +78,8 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # 提取绿色区域
         mask = cv2.inRange(hsv, lower_green, upper_green)
+        img = self.reduce_img(image, mask)
 
-        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]  # 获取图片中的轮廓
-        c = max(cnts, key=cv2.contourArea)  # 在边界中找出面积最大的区域
-        rect = cv2.minAreaRect(c)  # 绘制出该区域的最小外接矩形
-        box = cv2.boxPoints(rect)  # 记录该矩形四个点的位置坐标
-        box = np.int0(box)  # 将坐标转化为整数
-
-        x, y, w, h = cv2.boundingRect(box)  # 获取最小外接轴对齐矩形的坐标
-
-        img = image[y:y + h, x:x + w]  # 获取roi区域
-        #
-        # # 显示结果
-        # cv2.namedWindow("Result", cv2.WINDOW_NORMAL)
-        # cv2.resizeWindow("Result", 500, 500)
-        # cv2.imshow("Result", img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        # 对img进行处理
         cv2.imwrite('result.jpg', img)  # 保存图片
         # 仿射变换
         rows, cols, ch = img.shape
@@ -107,20 +113,18 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # 小轮廓去除
         contours, _ = cv2.findContours(erosion, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        draw_img1 = cv2.cvtColor(erosion, cv2.COLOR_GRAY2RGB)
-        # # 绘制轮廓
-        res = cv2.drawContours(draw_img1, contours, -1, (0, 0, 255), 2)
+        # draw_img1 = cv2.cvtColor(erosion, cv2.COLOR_GRAY2RGB)
+        # # # 绘制轮廓
+        # res = cv2.drawContours(draw_img1, contours, -1, (0, 0, 255), 2)
         # cv2.imshow("res3", res)
         # cv2.waitKey(0)
         fill = []
         for contour in contours:
-            area = cv2.contourArea((contour))
+            area = cv2.contourArea(contour)
             if area < 100:
                 fill.append(contour)
         thresh = cv2.fillPoly(erosion, fill, (255, 255, 255))
-        #
-        # cv2.imshow("thresh0", thresh)
-        # cv2.waitKey(0)
+
         # 再次轮廓检测
         contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         # 遍历轮廓并绘制矩形框
@@ -134,33 +138,22 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 # 绘制矩形框
                 cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-        img = self.label_img(img)
-        self.after_photo.setPixmap(QtGui.QPixmap.fromImage(img))
-        # # 显示结果
-        # cv2.imshow('Result', img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        # # 保存图片
-        # cv2.imwrite('result2.jpg', img)
         return thresh
 
     def mode_match(self):
         # 加载数字模板
-        template_files = ['0.jpg', '1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg',
-                          '9.jpg']  # 根据实际情况填写模板文件名
+        template_files = ['1.png', '2.png', '4.png', '5.png', '7.png', '10.png', '11.png', 'B.png'
+                          ]  # 根据实际情况填写模板文件名
         # 创建一部字典，将模板文件名映射到对应的值
         template_values = {
-            '0.jpg': 0,
-            '1.jpg': 1,
-            '2.jpg': 2,
-            '3.jpg': 3,
-            '4.jpg': 4,
-            '5.jpg': 5,
-            '6.jpg': 6,
-            '7.jpg': 7,
-            '8.jpg': 8,
-            '9.jpg': 9
+            '1.png': 1,
+            '2.png': 2,
+            '4.png': 4,
+            '5.png': 5,
+            '7.png': 7,
+            '10.png': ".",
+            '11.png': "/",
+            'B.png': "B"
         }
         # 加载数字模板并赋值
         templates = {}
@@ -178,32 +171,67 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             templates[value] = cv2.GaussianBlur(templates[value], (5, 5), 0)
             # cv2.imshow(str(value), templates[value])
             # cv2.waitKey(0)
+            # templates[value] = cv2.resize(templates[value], (400,600))
         # 读取目标图像并进行预处理
-        image = self.recognize()
-        # 这里可以添加一些图像处理操作，如灰度化、二值化、滤波等
-        # 检测图像中的数字轮廓并进行识别
-        contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        result = []
+        # img = self.recognize()
+
+        img_thread = threading.Thread(target=self.recognize_wrapper, args=())
+        img_thread.setDaemon(True)  # 设置为守护线程，主线程结束后自动结束
+        img_thread.start()  # 启动线程
+        img_thread.join()  # 等待线程完成
+        img = self.result_queue.get()
+        # cv2.imshow("img", img)
+        # cv2.waitKey(0)
+        # 对图片进行腐蚀 ，缩小图片
+        kernel = np.ones((50, 50), np.uint8)
+        image = cv2.erode(img, kernel, iterations=1)
+        # cv2.imshow("image", image)
+        # cv2.waitKey(0)
+        roi = self.reduce_img(img, image)
+        contours, _ = cv2.findContours(roi, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        cv2.drawContours(roi, contours, -1, (0, 0, 255), 2)
+        # cv2.imshow("roi", roi)
+        # cv2.waitKey(0)
+        # 遍历轮廓并进行模板匹配
         for contour in contours:
+            # 计算轮廓的边界框
             x, y, w, h = cv2.boundingRect(contour)
-            roi = image[y:y + h, x:x + w]
+            # 绘制矩形框
+            img = cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            img = self.reduce_img(image, img)
+            # 保存起来后面再次imread转成灰度图进行模板匹配
+            cv2.imwrite('result.jpg', img)
+            # 切割图片
             best_match = -1
             best_score = float('-inf')  # 改为负无穷，因为cv2.TM_CCOEFF_NORMED的score越高越好
-            for value, template in templates.items():  # 直接遍历字典的键值对
-                res = cv2.matchTemplate(roi, template, cv2.TM_CCOEFF_NORMED)
+            # 遍历模板
+            for value, template in templates.items():  # 直接遍历字典的键值对,value 是字典的键，template 是字典的值
+                # 匹配模板
+                img = cv2.imread('result.jpg', 0)
+                # img = cv2.resize(img, (400, 600))
+                # cv2.imshow("res", res)
+                res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
                 _, score, _, _ = cv2.minMaxLoc(res)
                 if score > best_score:  # 改为大于号，因为cv2.TM_CCOEFF_NORMED的score越高越好
                     best_score = score
-                    best_match = value
+                    self.best_match = value
 
-                    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                    cv2.putText(image, str(best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-                    print("匹配到数字：", best_match)
+                    # cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+                    # self.frame = cv2.putText(roi, str(self.best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    #                          (0, 255, 0), 2)
+                    print("匹配到数字：", self.best_match)
+
+                    self.textEdit.append(str(self.best_match))
+                    img = self.label_img(roi)
+                    self.after_photo.setFixedSize(500, 300)  # 设置你希望的固定大小
+                    self.after_photo.setPixmap(QtGui.QPixmap.fromImage(img))
 
                 if best_match == -1:  # 没有匹配到任何模板
+                    unknown = "没有匹配到任何模板"
+                    self.textEdit.append(unknown)
+                    print(unknown)
                     continue
-            # 将识别结果添加到列表中
-            result.append(str(best_match))
 
 
 if __name__ == "__main__":
