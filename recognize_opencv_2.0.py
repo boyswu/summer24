@@ -16,7 +16,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
         self.goal_file.clicked.connect(self.open_file)
-        self.start.clicked.connect(self.recognize)
+        self.start.clicked.connect(self.mode_match)
 
     def open_file(self):
         path = QFileDialog.getOpenFileName(self,
@@ -143,6 +143,67 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         # cv2.destroyAllWindows()
         # # 保存图片
         # cv2.imwrite('result2.jpg', img)
+        return thresh
+
+    def mode_match(self):
+        # 加载数字模板
+        template_files = ['0.jpg', '1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg',
+                          '9.jpg']  # 根据实际情况填写模板文件名
+        # 创建一部字典，将模板文件名映射到对应的值
+        template_values = {
+            '0.jpg': 0,
+            '1.jpg': 1,
+            '2.jpg': 2,
+            '3.jpg': 3,
+            '4.jpg': 4,
+            '5.jpg': 5,
+            '6.jpg': 6,
+            '7.jpg': 7,
+            '8.jpg': 8,
+            '9.jpg': 9
+        }
+        # 加载数字模板并赋值
+        templates = {}
+        for file in template_files:
+            value = template_values[file]
+            templates[value] = cv2.imread('./numbers/' + file, 0)
+            # 这里可以添加一些模板处理操作，如灰度化、二值化、滤波等
+            # 二值化
+            templates[value] = cv2.threshold(templates[value], 127, 255, cv2.THRESH_BINARY)[1]
+            # #膨胀
+            # templates[value] = cv2.dilate(templates[value], np.ones((3, 3), np.uint8), iterations=1)
+            # 腐蚀
+            templates[value] = cv2.erode(templates[value], np.ones((3, 3), np.uint8), iterations=1)
+            # 高斯模糊
+            templates[value] = cv2.GaussianBlur(templates[value], (5, 5), 0)
+            # cv2.imshow(str(value), templates[value])
+            # cv2.waitKey(0)
+        # 读取目标图像并进行预处理
+        image = self.recognize()
+        # 这里可以添加一些图像处理操作，如灰度化、二值化、滤波等
+        # 检测图像中的数字轮廓并进行识别
+        contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        result = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            roi = image[y:y + h, x:x + w]
+            best_match = -1
+            best_score = float('-inf')  # 改为负无穷，因为cv2.TM_CCOEFF_NORMED的score越高越好
+            for value, template in templates.items():  # 直接遍历字典的键值对
+                res = cv2.matchTemplate(roi, template, cv2.TM_CCOEFF_NORMED)
+                _, score, _, _ = cv2.minMaxLoc(res)
+                if score > best_score:  # 改为大于号，因为cv2.TM_CCOEFF_NORMED的score越高越好
+                    best_score = score
+                    best_match = value
+
+                    cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.putText(image, str(best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    print("匹配到数字：", best_match)
+
+                if best_match == -1:  # 没有匹配到任何模板
+                    continue
+            # 将识别结果添加到列表中
+            result.append(str(best_match))
 
 
 if __name__ == "__main__":
