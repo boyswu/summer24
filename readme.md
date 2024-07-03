@@ -187,6 +187,107 @@ cv2.imwrite('result2.jpg', img)
 
 ![想截图_2024070221314](C:\Users\boys\Desktop\24年暑假学习\4.7号\assets\联想截图_20240702213142.png)
 
+# 加载数字模板
+
+```python
+# 加载数字模板
+template_files = ['1.png', '2.png', '4.png', '5.png', '7.png', '10.png', '11.png', 'B.png'
+                  ]  # 根据实际情况填写模板文件名
+# 创建一部字典，将模板文件名映射到对应的值
+template_values = {
+    '1.png': 1,
+    '2.png': 2,
+    '4.png': 4,
+    '5.png': 5,
+    '7.png': 7,
+    '10.png': ".",
+    '11.png': "/",
+    'B.png': "B"
+}
+# 加载数字模板并赋值
+templates = {}
+for file in template_files:
+    value = template_values[file]
+    templates[value] = cv2.imread('./numbers/' + file, 0)
+    # 这里可以添加一些模板处理操作，如灰度化、二值化、滤波等
+    # 二值化
+    templates[value] = cv2.threshold(templates[value], 127, 255, cv2.THRESH_BINARY)[1]
+    # #膨胀
+    # templates[value] = cv2.dilate(templates[value], np.ones((3, 3), np.uint8), iterations=1)
+    # 腐蚀
+    templates[value] = cv2.erode(templates[value], np.ones((3, 3), np.uint8), iterations=1)
+    # 高斯模糊
+    templates[value] = cv2.GaussianBlur(templates[value], (5, 5), 0)
+```
+
+# 对先前框出的图片再次操作
+
+```python
+img_thread = threading.Thread(target=self.recognize_wrapper, args=())
+img_thread.setDaemon(True)  # 设置为守护线程，主线程结束后自动结束
+img_thread.start()  # 启动线程
+img_thread.join()  # 等待线程完成
+img = self.result_queue.get()
+# cv2.imshow("img", img)
+# cv2.waitKey(0)
+# 对图片进行腐蚀 ，缩小图片
+kernel = np.ones((50, 50), np.uint8)
+image = cv2.erode(img, kernel, iterations=1)
+# cv2.imshow("image", image)
+# cv2.waitKey(0)
+roi = self.reduce_img(img, image)
+```
+
+#检测轮廓对处理好的图像的每一个数字框出矩阵然后分割，最后与模板匹配
+
+```python
+# cv2.drawContours(roi, contours, -1, (0, 0, 255), 2)
+# cv2.imshow("roi", roi)
+# cv2.waitKey(0)
+# 遍历轮廓并进行模板匹配
+for contour in contours:
+    # 计算轮廓的边界框
+    x, y, w, h = cv2.boundingRect(contour)
+    # 绘制矩形框
+    img = cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
+    img = self.reduce_img(image, img)
+    # 保存起来后面再次imread转成灰度图进行模板匹配
+    cv2.imwrite('result.jpg', img)
+    # 切割图片
+    best_match = -1
+    best_score = float('-inf')  # 改为负无穷，因为cv2.TM_CCOEFF_NORMED的score越高越好
+    # 遍历模板
+    for value, template in templates.items():  # 直接遍历字典的键值对,value 是字典的键，template 是字典的值
+        # 匹配模板
+        img = cv2.imread('result.jpg', 0)
+        # img = cv2.resize(img, (400, 600))
+        # cv2.imshow("res", res)
+        res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+        _, score, _, _ = cv2.minMaxLoc(res)
+        if score > best_score:  # 改为大于号，因为cv2.TM_CCOEFF_NORMED的score越高越好
+            best_score = score
+            self.best_match = value
+
+            # cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+            # self.frame = cv2.putText(roi, str(self.best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1,
+            #                          (0, 255, 0), 2)
+            print("匹配到数字：", self.best_match)
+
+            self.textEdit.append(str(self.best_match))
+            img = self.label_img(roi)
+            self.after_photo.setFixedSize(500, 300)  # 设置你希望的固定大小
+            self.after_photo.setPixmap(QtGui.QPixmap.fromImage(img))
+
+        if best_match == -1:  # 没有匹配到任何模板
+            unknown = "没有匹配到任何模板"
+            self.textEdit.append(unknown)
+            print(unknown)
+            continue
+```
+
+![想截图_2024070322254](C:\Users\boys\Desktop\24年暑假学习\4.7号\assets\联想截图_20240703222540.png)
+
 #github地址
 
 <[boyswu/summer24 (github.com)](https://github.com/boyswu/summer24)>

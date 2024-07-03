@@ -189,7 +189,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         # cv2.waitKey(0)
         roi = self.reduce_img(img, image)
         contours, _ = cv2.findContours(roi, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        cv2.drawContours(roi, contours, -1, (0, 0, 255), 2)
+        # cv2.drawContours(roi, contours, -1, (0, 0, 255), 2)
         # cv2.imshow("roi", roi)
         # cv2.waitKey(0)
         # 遍历轮廓并进行模板匹配
