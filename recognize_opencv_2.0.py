@@ -52,7 +52,6 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         if img is None:
             return QtGui.QImage()
 
-
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
         img = QtGui.QImage(img.data, img.shape[1], img.shape[0],
                            int(img.shape[1]) * 3,
@@ -146,46 +145,58 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         return thresh
 
     def mode_match(self):
-        # 加载数字模板
-        template_files = ['0.jpg', '1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg', '9.jpg',
-                          '10.jpg', '11.jpg'
-                          ]  # 根据实际情况填写模板文件名
-        # 创建一部字典，将模板文件名映射到对应的值
-        template_values = {
-            '0.jpg': 1,
-            '1.jpg': 7,
-            '2.jpg': 1,
-            '3.jpg': 2,
-            '4.jpg': '.',
-            '5.jpg': 4,
-            '6.jpg': 5,
-            '7.jpg': '/',
-            '8.jpg': 'B',
-            '9.jpg': 7,
-            '10.jpg': 5,
-            '11.jpg': 7
+
+        folders = {
+            '0': '0',
+            '1': '1',
+            '2': '2',
+            '3': '3',
+            '4': '4',
+            '5': '5',
+            '6': '6',
+            '7': '7',
+            '8': '8',
+            '9': '9',
+            'dian': '.',
+            'xiegang': '/',
+                'B': 'B',
+            'Y': 'Y'
         }
-        # 加载数字模板并赋值
+        # 创建一部字典来存储模板图片
         templates = {}
-        for file in template_files:
-            value = template_values[file]
-            templates[value] = cv2.imread('./numbers/' + file, 0)
-            # 这里可以添加一些模板处理操作，如灰度化、二值化、滤波等
-            # 二值化
-            templates[value] = cv2.threshold(templates[value], 127, 255, cv2.THRESH_BINARY)[1]
-            # #膨胀
-            # templates[value] = cv2.dilate(templates[value], np.ones((3, 3), np.uint8), iterations=1)
-            # 腐蚀
-            templates[value] = cv2.erode(templates[value], np.ones((3, 3), np.uint8), iterations=1)
-            # 高斯模糊
-            templates[value] = cv2.GaussianBlur(templates[value], (5, 5), 0)
-            # cv2.imshow(str(value), templates[value])
-            # cv2.waitKey(0)
-            templates[value] = cv2.resize(templates[value], (200, 300))
-            # cv2.imshow(str(value), templates[value])
-            # cv2.waitKey(0)
-        # 读取目标图像并进行预处理
-        # img = self.recognize()
+
+        # 遍历每个文件夹
+        for folder, value in folders.items():
+            folder_path = os.path.join('./moban', folder)
+            if os.path.isdir(folder_path):
+                # 获取文件夹中的所有图片文件
+                files = [f for f in os.listdir(folder_path) if f.endswith('.jpg')]
+                # 加载每个图片文件并存储到字典中
+                for file in files:
+                    file_path = os.path.join(folder_path, file)
+                    template_img = cv2.imread(file_path, 0)
+                    if template_img is not None:
+                        if value not in templates:
+                            templates[value] = []
+                        templates[value].append(template_img)
+        # 遍历每个模板，进行预处理
+        for value, template_list in templates.items():
+            # 遍历模板列表，对每个模板进行预处理
+            for i in range(len(template_list)):
+                template = template_list[i]
+                # 二值化
+                template = cv2.threshold(template, 127, 255, cv2.THRESH_BINARY)[1]
+                # #膨胀
+                # template = cv2.dilate(template, np.ones((3, 3), np.uint8), iterations=1)
+                # 腐蚀
+                template = cv2.erode(template, np.ones((3, 3), np.uint8), iterations=1)
+                # 高斯模糊
+                template = cv2.GaussianBlur(template, (5, 5), 0)
+                # 缩放
+                template = cv2.resize(template, (200, 300))
+                template_list[i] = template
+                # cv2.imshow("template", template)
+                # cv2.waitKey(0)
 
         img_thread = threading.Thread(target=self.recognize_wrapper, args=())
         img_thread.setDaemon(True)  # 设置为守护线程，主线程结束后自动结束
@@ -225,32 +236,45 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             # 切割图片
             best_match = -1
             best_score = float('-inf')  # 改为负无穷，因为cv2.TM_CCOEFF_NORMED的score越高越好
+            img = cv2.imread('jietu.jpg', 0)
+            img = cv2.resize(img, (200, 300))
             # 遍历模板
-            for value, template in templates.items():  # 遍历模板，value为模板值，template为模板图片
-                # 匹配模板
-                img = cv2.imread('jietu.jpg', 0)
-                img = cv2.resize(img, (200, 300))
-                # cv2.imshow("SHUOimg", img)
-                # cv2.waitKey(0)
-                # 匹配模板
+            for value, template_list in templates.items():
+                for template in template_list:
+                    # # 检查像素值范围
+                    # print("模板图像的最小值和最大值：", np.min(template), np.max(template))
+                    # # 如果像素值不在0到255之间，进行归一化
+                    # if np.min(template) < 0 or np.max(template) > 255:
+                    #     template = cv2.normalize(template, None, 0, 255, cv2.NORM_MINMAX)
+                    # # 显示归一化后的图像
+                    # cv2.imshow('Normalized Template', template)
+                    # cv2.waitKey(0)
+                    # cv2.destroyAllWindows()
 
-                # cv2.imshow("res", res)
-                res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
-                _, score, _, _ = cv2.minMaxLoc(res)
-                if score > best_score:  # 改为大于号，因为cv2.TM_CCOEFF_NORMED的score越高越好
-                    # print("最佳匹配：", best_score)
-                    # print("当前匹配：", score)
-                    # print("当前模板值：", value)
-                    # print("当前模板图片：", template)
-                    best_score = score
-                    # print("最佳匹配：", best_score)
-                    # 选择最佳匹配的模板值作为识别结果
-                    best_match = value
-                if best_match == -1:  # 没有匹配到任何模板
-                    # unknown = "没有匹配到任何模板"
-                    # self.textEdit.append(unknown)
-                    # print(unknown)
-                    continue
+                    res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
+                    _, score, _, _ = cv2.minMaxLoc(res)
+                    if score > best_score:  # 改为大于号，因为cv2.TM_CCOEFF_NORMED的score越高越好
+
+                        # print("最佳匹配：", best_score)
+                        # print("当前匹配：", score)
+                        # print("当前模板值：", value)
+                        # print("当前模板：", template)
+                        # # print("当前图片：", img)
+
+                        # # cv2.imshow("template", template)
+                        # cv2.imshow("img", img)
+                        # cv2.waitKey(0)
+                        # cv2.destroyAllWindows()
+
+                        best_score = score
+                        # print("最佳匹配：", best_score)
+                        # 选择最佳匹配的模板值作为识别结果
+                        best_match = value
+                    if best_match == -1:  # 没有匹配到任何模板
+                        # unknown = "没有匹配到任何模板"
+                        # self.textEdit.append(unknown)
+                        # print(unknown)
+                        continue
             # 在循环结束后输出最佳匹配的模板值
             print("最终最佳匹配的模板值：", best_match)
             # 将for循环best_match的值拼接成字符串，输出到textEdit
@@ -282,8 +306,10 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             results = cursor.fetchall()
             # 输出查询结果
             for row in results:
-                print(row[0])
-                self.textEdit.append(row[0])
+                print('查询结果：', row[0])
+                self.textEdit.append(f"查询结果：{row[0]}")
+
+
         except pymysql.Error as e:
             print("Error: unable to fetch data", e)
             self.textEdit.append("Error: unable to fetch data", e)
