@@ -1,9 +1,3 @@
-import queue
-import threading
-import cv2
-import numpy as np
-from PyQt5.QtWidgets import QFileDialog
-import os
 from add_UI import Ui_MainWindow
 from PyQt5 import QtWidgets, QtGui
 from sql import host, user, passwd, db2

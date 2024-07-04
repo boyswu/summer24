@@ -126,19 +126,6 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
                 fill.append(contour)
         thresh = cv2.fillPoly(erosion, fill, (255, 255, 255))
 
-        # 再次轮廓检测
-        contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        # 遍历轮廓并绘制矩形框
-        for contour in contours:
-            # 计算轮廓的面积e
-            area = cv2.contourArea(contour)
-            # if int(area) < 1500 and int(area) > 500:
-            if int(area) < 3000:
-                # 计算轮廓的边界框
-                x, y, w, h = cv2.boundingRect(contour)
-
-                # 绘制矩形框
-                cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
         return thresh
 
     def mode_match(self):
