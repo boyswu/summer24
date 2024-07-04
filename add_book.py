@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QFileDialog
 import os
 from add_UI import Ui_MainWindow
 from PyQt5 import QtWidgets, QtGui
+from sql import host, user, passwd, db2
 import pymysql
 
 
@@ -25,11 +26,30 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         self.connect_sql(bookname, bookid)
 
     def connect_sql(self, bookname, bookid):
+
         try:
-            db = pymysql.connect(host='8.147.233.239', user='root', passwd='team2111', db='wjh', charset='utf8')
+            db = pymysql.connect(host=host, user=user, passwd=passwd, db=db2, charset='utf8')
         except pymysql.Error as e:
             print(f"数据库连接失败: {e}")
             return
+        sql = "SELECT * FROM library WHERE bookname = %s AND bookid = %s"
+        try:
+            cursor = db.cursor()
+            cursor.execute(sql, (bookname, bookid))
+            result = cursor.fetchone()
+            if result:   # 书籍信息已存在
+                self.textEdit.append("书籍信息已存在")
+                self.textEdit.append(f"书名: {bookname}, 书号: {bookid}")
+            else:   # 书籍信息不存在，可以插入
+                self.insert_sql(db, bookname, bookid)
+        except pymysql.Error as e:
+            print(f"数据库查询失败: {e}")
+            self.textEdit.append("数据库查询失败")
+            self.textEdit.append(f"书名: {bookname}, 书号: {bookid}")
+        finally:
+            db.close()
+
+    def insert_sql(self, db, bookname, bookid):
 
         cursor = db.cursor()
         sql = "INSERT INTO library (bookname, bookid) VALUES (%s, %s)"
@@ -38,11 +58,6 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             db.commit()
             print("数据插入成功")
             self.textEdit.append("数据插入成功")
-            self.textEdit.append(f"书名: {bookname}, 书号: {bookid}")
-        except pymysql.Error as e:
-            db.rollback()
-            print(f"数据插入失败: {e}")
-            self.textEdit.append("数据插入失败")
             self.textEdit.append(f"书名: {bookname}, 书号: {bookid}")
         finally:
             db.close()

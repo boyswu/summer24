@@ -110,19 +110,15 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         erosion = cv2.erode(binary, kernel, iterations=1)
         # cv2.imshow('腐蚀', erosion)
         # cv2.waitKey(0)
-        # 形态学操作，填充孔洞 膨胀
-        kernel = np.ones((3, 3), np.uint8)
-        dilation = cv2.dilate(erosion, kernel, iterations=1)
-        # cv2.imshow('膨胀', dilation)
-        # cv2.waitKey(0)
+        # # 形态学操作，填充孔洞 膨胀
+        # kernel = np.ones((3, 3), np.uint8)
+        # dilation = cv2.dilate(erosion, kernel, iterations=1)
+        # # cv2.imshow('膨胀', dilation)
+        # # cv2.waitKey(0)
 
         # 小轮廓去除
         contours, _ = cv2.findContours(erosion, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        # draw_img1 = cv2.cvtColor(erosion, cv2.COLOR_GRAY2RGB)
-        # # # 绘制轮廓
-        # res = cv2.drawContours(draw_img1, contours, -1, (0, 0, 255), 2)
-        # cv2.imshow("res3", res)
-        # cv2.waitKey(0)
+
         fill = []
         for contour in contours:
             area = cv2.contourArea(contour)
@@ -146,7 +142,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         return thresh
 
     def mode_match(self):
-
+        # 定义模板文件夹
         folders = {
             '0': '0',
             '1': '1',
@@ -165,9 +161,8 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         }
         # 创建一部字典来存储模板图片
         templates = {}
-
         # 遍历每个文件夹
-        for folder, value in folders.items():
+        for folder, value in folders.items(): # 遍历字典,folder为键，value为值
             folder_path = os.path.join('./moban', folder)
             if os.path.isdir(folder_path):
                 # 获取文件夹中的所有图片文件
@@ -232,7 +227,6 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             # cv2.imshow("img", img)
             # cv2.waitKey(0)
             # 保存起来后面再次imread转成灰度图进行模板匹配
-            # 保存起来后面再次imread转成灰度图进行模板匹配
             cv2.imwrite('jietu.jpg', img)
             # 切割图片
             best_match = -1
@@ -242,33 +236,14 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             # 遍历模板
             for value, template_list in templates.items():
                 for template in template_list:
-                    # # 检查像素值范围
-                    # print("模板图像的最小值和最大值：", np.min(template), np.max(template))
-                    # # 如果像素值不在0到255之间，进行归一化
-                    # if np.min(template) < 0 or np.max(template) > 255:
-                    #     template = cv2.normalize(template, None, 0, 255, cv2.NORM_MINMAX)
-                    # # 显示归一化后的图像
-                    # cv2.imshow('Normalized Template', template)
-                    # cv2.waitKey(0)
-                    # cv2.destroyAllWindows()
 
                     res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
                     _, score, _, _ = cv2.minMaxLoc(res)
                     if score > best_score:  # 改为大于号，因为cv2.TM_CCOEFF_NORMED的score越高越好
-
-                        # print("最佳匹配：", best_score)
-                        # print("当前匹配：", score)
-                        # print("当前模板值：", value)
-                        # print("当前模板：", template)
-                        # # print("当前图片：", img)
                         best_score = score
-                        # print("最佳匹配：", best_score)
-                        # 选择最佳匹配的模板值作为识别结果
                         best_match = value
                     if best_match == -1:  # 没有匹配到任何模板
-                        # unknown = "没有匹配到任何模板"
-                        # self.textEdit.append(unknown)
-                        # print(unknown)
+                        print("没有匹配到任何模板")
                         continue
             # 在循环结束后输出最佳匹配的模板值
             print("最终最佳匹配的模板值：", best_match)
@@ -294,14 +269,15 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         # 查询数据表里的数据
         sql = "SELECT bookname FROM library WHERE bookid = %s"
         try:
-            cursor.execute(sql, (result_str,))
-            db.commit()
+            cursor.execute(sql, result_str)
+            # db.commit()
             # 获取查询结果
             results = cursor.fetchall()
             # 输出查询结果
             for row in results:
                 print('查询结果：', row[0])
                 self.textEdit.append(f"查询结果：{row[0]}")
+
 
         except pymysql.Error as e:
             print("Error: unable to fetch data", e)
