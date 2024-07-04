@@ -295,7 +295,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         sql = "SELECT bookname FROM library WHERE bookid = %s"
         try:
             cursor.execute(sql, (result_str,))
-            db.commit()
+            # db.commit()
             # 获取查询结果
             results = cursor.fetchall()
             # 输出查询结果

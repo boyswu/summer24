@@ -7,7 +7,6 @@ import pymysql
 class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super(recognize_figure, self).__init__(parent)
-
         self.setupUi(self)
 
         self.pushButton.clicked.connect(self.book_infromation)
