@@ -6,12 +6,13 @@ from PyQt5.QtWidgets import QFileDialog
 import os
 from UI import Ui_MainWindow
 from PyQt5 import QtWidgets, QtGui
+import pymysql
 
 
 class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super(recognize_figure, self).__init__(parent)
-        self.best_match = ''
+
         self.setupUi(self)
 
         self.cwd = os.getcwd()  # 获取当前程序文件位置
@@ -142,18 +143,23 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def mode_match(self):
         # 加载数字模板
-        template_files = ['1.png', '2.png', '4.png', '5.png', '7.png', '10.png', '11.png', 'B.png'
+        template_files = ['0.jpg', '1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg', '9.jpg',
+                          '10.jpg', '11.jpg'
                           ]  # 根据实际情况填写模板文件名
         # 创建一部字典，将模板文件名映射到对应的值
         template_values = {
-            '1.png': 1,
-            '2.png': 2,
-            '4.png': 4,
-            '5.png': 5,
-            '7.png': 7,
-            '10.png': ".",
-            '11.png': "/",
-            'B.png': "B"
+            '0.jpg': 1,
+            '1.jpg': 7,
+            '2.jpg': 1,
+            '3.jpg': 2,
+            '4.jpg': '.',
+            '5.jpg': 4,
+            '6.jpg': 5,
+            '7.jpg': '/',
+            '8.jpg': 'B',
+            '9.jpg': 7,
+            '10.jpg': 5,
+            '11.jpg': 7
         }
         # 加载数字模板并赋值
         templates = {}
@@ -171,7 +177,9 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             templates[value] = cv2.GaussianBlur(templates[value], (5, 5), 0)
             # cv2.imshow(str(value), templates[value])
             # cv2.waitKey(0)
-            templates[value] = cv2.resize(templates[value], (400, 600))
+            templates[value] = cv2.resize(templates[value], (200, 300))
+            # cv2.imshow(str(value), templates[value])
+            # cv2.waitKey(0)
         # 读取目标图像并进行预处理
         # img = self.recognize()
 
@@ -189,15 +197,21 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         # cv2.waitKey(0)
         roi = self.reduce_img(img, image)
         contours, _ = cv2.findContours(roi, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-        # cv2.drawContours(roi, contours, -1, (0, 0, 255), 2)
-        # cv2.imshow("roi", roi)
-        # cv2.waitKey(0)
         # 遍历轮廓并进行模板匹配
-        for contour in contours:
+        # 首先将轮廓按照 x 坐标排序 从左到右
+        sorted_contours = sorted(contours, key=lambda c: cv2.boundingRect(c)[0])
+        result = []
+        for contour in sorted_contours:
+            # 计算轮廓的面积
+            area = cv2.contourArea(contour)
+            # print("轮廓面积：", area)
             # 计算轮廓的边界框
             x, y, w, h = cv2.boundingRect(contour)
+            if 0 < area < 100 or 150 < area < 600 or area > 50000:  # 过滤掉过小的轮廓
+                continue
             # 绘制矩形框
             cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
             img = roi[y:y + h, x:x + w]
             # cv2.imshow("img", img)
             # cv2.waitKey(0)
@@ -211,33 +225,65 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             for value, template in templates.items():  # 遍历模板，value为模板值，template为模板图片
                 # 匹配模板
                 img = cv2.imread('jietu.jpg', 0)
-                img = cv2.resize(img, (400, 600))
+                img = cv2.resize(img, (200, 300))
+                # cv2.imshow("SHUOimg", img)
+                # cv2.waitKey(0)
+                # 匹配模板
+
                 # cv2.imshow("res", res)
                 res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
                 _, score, _, _ = cv2.minMaxLoc(res)
                 if score > best_score:  # 改为大于号，因为cv2.TM_CCOEFF_NORMED的score越高越好
+                    # print("最佳匹配：", best_score)
+                    # print("当前匹配：", score)
+                    # print("当前模板值：", value)
+                    # print("当前模板图片：", template)
                     best_score = score
-                    self.best_match = value
-
-                    # cv2.rectangle(roi, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-                    # self.frame = cv2.putText(roi, str(self.best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                    #                          (0, 255, 0), 2)
-                    print("匹配到数字：", self.best_match)
-
-                    self.textEdit.append(str(self.best_match))
-                    img = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
-                    roi= cv2.putText(img, str(self.best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
-                    img = self.label_img(roi)
-
-                    self.after_photo.setFixedSize(500, 300)  # 设置你希望的固定大小
-                    self.after_photo.setPixmap(QtGui.QPixmap.fromImage(img))
-
+                    # print("最佳匹配：", best_score)
+                    # 选择最佳匹配的模板值作为识别结果
+                    best_match = value
                 if best_match == -1:  # 没有匹配到任何模板
                     # unknown = "没有匹配到任何模板"
                     # self.textEdit.append(unknown)
                     # print(unknown)
                     continue
+            # 在循环结束后输出最佳匹配的模板值
+            print("最终最佳匹配的模板值：", best_match)
+            # 将for循环best_match的值拼接成字符串，输出到textEdit
+            img = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
+            roi = cv2.putText(img, str(best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
+            img = self.label_img(roi)
+            self.after_photo.setFixedSize(500, 300)  # 设置你希望的固定大小
+            self.after_photo.setPixmap(QtGui.QPixmap.fromImage(img))
+            # 将best_match添加进result列表
+            result.append(best_match)
+        # 将result列表里的元素合并成字符串，输出到textEdit
+        result_str = ''.join(map(str, result))
+        self.textEdit.setText(result_str)
+        print("最终识别结果：", result_str)
+        # 连接数据库
+        self.connect_sql(result_str)
+
+    def connect_sql(self, result_str):
+
+        db = pymysql.connect(host='8.147.233.239', user='root', passwd='team2111', db='wjh',
+                             charset='utf8')
+        cursor = db.cursor()
+        # 查询数据表里的数据
+        sql = "SELECT bookname FROM library WHERE bookid = %s"
+        try:
+            cursor.execute(sql, (result_str,))
+            db.commit()
+            # 获取查询结果
+            results = cursor.fetchall()
+            # 输出查询结果
+            for row in results:
+                print(row[0])
+                self.textEdit.append(row[0])
+                db.close()
+        except:
+            print("Error: unable to fetch data")
+        db.close()
 
 
 if __name__ == "__main__":
