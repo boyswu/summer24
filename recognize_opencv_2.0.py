@@ -29,7 +29,8 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
                                            self.cwd,  # 起始路径
                                            "Image Files (*.jpg *.png *.jpeg *.bmp)")  # 设置文件扩展名过滤,用双分号间隔
         if path == "":
-            return
+            print("取消选择")
+            self.textEdit.append("取消选择")
         else:
             print("\n你选择的文件夹为:", path)
             self.path = path[0]
@@ -48,6 +49,9 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         self.result_queue.put(result)
 
     def label_img(self, img):
+        if img is None:
+            return QtGui.QImage()
+
 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
         img = QtGui.QImage(img.data, img.shape[1], img.shape[0],
@@ -280,10 +284,11 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             for row in results:
                 print(row[0])
                 self.textEdit.append(row[0])
-                db.close()
-        except:
-            print("Error: unable to fetch data")
-        db.close()
+        except pymysql.Error as e:
+            print("Error: unable to fetch data", e)
+            self.textEdit.append("Error: unable to fetch data", e)
+        finally:
+            db.close()
 
 
 if __name__ == "__main__":
