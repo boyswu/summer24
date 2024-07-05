@@ -1,3 +1,4 @@
+import qdarkstyle
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QGuiApplication
 from management_UI import Ui_MainWindow
@@ -8,10 +9,10 @@ from new_page_connect import SecondWindow
 
 
 class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
-    def __init__(self, parent=None):
-        super(recognize_figure, self).__init__(parent)
-        self.result = None
+    def __init__(self):
+        super().__init__()
         self.setupUi(self)
+        self.result = None
         self.select.clicked.connect(self.select_one_sql)
         self.insert.clicked.connect(self.insert_sql)
         self.reduce.clicked.connect(self.delete_sql)
@@ -19,6 +20,8 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         self.Ui_Window = SecondWindow()
 
     def connect_sql(self, ):
+        # 连接数据库
+
         db = pymysql.connect(host=host, user=user, passwd=passwd, db=db2, charset='utf8')
         return db
 
@@ -34,11 +37,11 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
     def select_sql(self):
         db = self.connect_sql()
         cursor = db.cursor()
-        sql = "SELECT * FROM book_info"
+        sql = "SELECT * FROM library"
         try:
             cursor.execute(sql)
             result = cursor.fetchall()
-            print("查询结果：", result)
+            # print("查询结果：", result)
             # 将查询结果插入到tableWidget里
             for row in result:
                 self.tableWidget.insertRow(self.tableWidget.rowCount())
@@ -51,20 +54,27 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             # 在label控件中显示提示信息
             self.Ui_Window.show_text.setText("数据库查询失败")
         finally:
+            cursor.close()
             db.close()
 
     def select_one_sql(self):
         bookname = self.bookname.text()
         print(bookname)
         db = self.connect_sql()
+        # from loguru import logger
+        # logger.debug(db)
+        # print('dfg')
         cursor = db.cursor()
         # 通过bookname或者bookid查询
-        sql = "SELECT * FROM book_info WHERE bookname = %s "
+        sql = "SELECT * FROM library WHERE bookname = %s "
         # 将查询结果覆盖到tableWidget里
-        if self.bookname.text() == "" or self.bookid.text() == "":
-            self.new_page()
-            # 在label控件中显示提示信息
-            self.Ui_Window.show_text.setText("请输入书名和书号")
+        if self.bookname.text() == "":
+            # self.new_page()
+            # # 在label控件中显示提示信息
+            # self.Ui_Window.show_text.setText("请输入书名")
+            QMbox = QtWidgets.QMessageBox()
+            QMbox.setText("请输入书名")
+            QMbox.exec_()
             return
         else:
             cursor.execute(sql, bookname)
@@ -83,9 +93,9 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.new_page()
                 # 在label控件中显示提示信息
                 self.Ui_Window.show_text.setText(f"查询成功 书名: {result[0]}, 书号: {result[1]}")
+                cursor.close()
                 db.close()
                 return
-
 
     def insert_sql(self):
 
@@ -94,14 +104,14 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         bookname = self.bookname.text()
         bookid = self.bookid.text()
 
-        sql = "INSERT INTO book_info(bookname, bookid) VALUES(%s, %s)"
+        sql = "INSERT INTO library(bookname, bookid) VALUES ('{}', '{}')".format(bookname, bookid)
         if bookname == "" or bookid == "":
             self.new_page()
             # 在label控件中显示提示信息
             self.Ui_Window.show_text.setText("请输入书名和书号")
             return
         try:
-            cursor.execute(sql, (bookname, bookid))
+            cursor.execute(sql)
             db.commit()
             print("数据插入成功")
             self.new_page()
@@ -118,6 +128,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             # 在label控件中显示提示信息
             self.Ui_Window.show_text.setText("数据库插入失败")
         finally:
+            cursor.close()
             db.close()
 
     def delete_sql(self):
@@ -136,7 +147,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
 
         bookname = bookname_item.text()
         bookid = bookid_item.text()
-        sql = "DELETE FROM book_info WHERE bookname = %s AND bookid = %s"
+        sql = "DELETE FROM library WHERE bookname = %s AND bookid = %s"
         print(f"删除书名: {bookname}, 书号: {bookid}")
 
         try:
@@ -154,6 +165,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             # 在label控件中显示提示信息
             self.Ui_Window.show_text.setText("数据库删除失败")
         finally:
+            cursor.close()
             db.close()
 
     def update_sql(self):
@@ -161,7 +173,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
         cursor = db.cursor()
         # 查询数据库里的所有数据，并且将数据提取出来与tableWidget里的数据进行遍历，如果一致，则不更新数据库，否则更新数据库
         # 先查询数据库里的数据
-        sql = "SELECT * FROM book_info"
+        sql = "SELECT * FROM library"
         try:
             cursor.execute(sql)
             result = cursor.fetchall()
@@ -191,7 +203,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             else:
                 print("数据不一致，更新数据库")
 
-                sql = "UPDATE book_info SET bookname = %s, bookid = %s WHERE bookname = %s AND bookid = %s"
+                sql = "UPDATE library SET bookname = %s, bookid = %s WHERE bookname = %s AND bookid = %s"
                 try:
                     cursor.execute(sql, (new_bookname, new_bookid, bookname, bookid))
                     db.commit()
@@ -204,7 +216,6 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
                     # 在label控件中显示提示信息
                     self.Ui_Window.show_text.setText("数据库更新失败")
 
-
         if len(new_bookname_bookid) == 0:
             self.new_page()
             # 在label控件中显示提示信息
@@ -215,6 +226,9 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             # 在label控件中显示提示信息
             self.Ui_Window.show_text.setText(f"数据更新成功 书名: {new_bookname_bookid}")
 
+        cursor.close()
+        db.close()
+
     # def closeEvent(self, event):
     #     reply = QtWidgets.QMessageBox.question(self, 'Message', "Are you sure to quit?",
     #                                            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
@@ -224,16 +238,17 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
     #     else:
     #         event.ignore()
 
-
 if __name__ == "__main__":
     import sys
 
     QGuiApplication.setAttribute(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
 
     app = QtWidgets.QApplication(sys.argv)
+    #使用 qdarkstyle
+
+    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     MainWindow = recognize_figure()
     MainWindow.show()
     # 调用select_sql方法
     MainWindow.select_sql()
-
     sys.exit(app.exec_())
