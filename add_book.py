@@ -39,8 +39,6 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
             print(f"数据库查询失败: {e}")
             self.textEdit.append("数据库查询失败")
             self.textEdit.append(f"书名: {bookname}, 书号: {bookid}")
-        finally:
-            db.close()
 
     def insert_sql(self, db, bookname, bookid):
 
