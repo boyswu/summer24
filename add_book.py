@@ -1,5 +1,5 @@
-from add_UI import Ui_MainWindow
-from PyQt5 import QtWidgets, QtGui
+from ui.add_UI import Ui_MainWindow
+from PyQt5 import QtWidgets
 from sql import host, user, passwd, db2
 import pymysql
 

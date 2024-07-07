@@ -1,5 +1,4 @@
-from new_page import Ui_Window
-from PyQt5 import QtCore
+from ui.new_page import Ui_Window
 from PyQt5.QtWidgets import QMainWindow
 
 class SecondWindow(QMainWindow, Ui_Window):

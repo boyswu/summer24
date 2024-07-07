@@ -1,7 +1,7 @@
 import qdarkstyle
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QGuiApplication
-from management_UI import Ui_MainWindow
+from ui.management_UI import Ui_MainWindow
 from PyQt5 import QtWidgets
 from sql import host, user, passwd, db2
 import pymysql
