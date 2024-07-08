@@ -42,8 +42,10 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         #  seetaface初始化
         self.init_mask = FACE_DETECT | FACERECOGNITION | LANDMARKER5
         self.seetaFace = SeetaFace(self.init_mask)  # 初始化
+        self.results = None  # 存储查询结果
 
-    def connect_sql(self, ):
+
+    def connect_sql(self):
         # 连接数据库
         db = pymysql.connect(host=host, user=user, passwd=passwd, db=db2, charset='utf8')
         cursor = db.cursor()
@@ -53,6 +55,8 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # 打开子界面
         self.hide() # 隐藏当前界面
         self.new_page_Window.show()
+        # 调用select_sql方法
+        self.new_page_Window.select_sql(self.results)
         self.new_page_Window.exit.clicked.connect(self.close_page)
 
     def close_page(self):
@@ -111,6 +115,7 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             feature = self.seetaFace.get_feature_numpy(feature)  # 获取feature的numpy表示数据
             Feature.append(feature)
         results = self.select_one_sql()
+        self.results = results
         similar = []
         for i in Feature:
             for j in results:
@@ -206,4 +211,7 @@ if __name__ == "__main__":
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     MainWindow = face_MainWindow()
     MainWindow.show()
+
+
+
     sys.exit(app.exec_())

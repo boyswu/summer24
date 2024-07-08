@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(620, 600)
+        MainWindow.resize(801, 600)
         MainWindow.setStyleSheet(".QLabel{ \n"
 "         background-color: rgb(255,255,255)\n"
 "}")
@@ -29,18 +29,20 @@ class Ui_MainWindow(object):
         self.camera_label.setText("")
         self.camera_label.setObjectName("camera_label")
         self.gridLayout.addWidget(self.camera_label, 0, 0, 1, 3)
-        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setObjectName("pushButton")
-        self.gridLayout.addWidget(self.pushButton, 1, 0, 1, 3)
-        self.log_in = QtWidgets.QPushButton(self.centralwidget)
-        self.log_in.setObjectName("log_in")
-        self.gridLayout.addWidget(self.log_in, 2, 0, 1, 3)
         self.log_out = QtWidgets.QPushButton(self.centralwidget)
         self.log_out.setObjectName("log_out")
-        self.gridLayout.addWidget(self.log_out, 3, 0, 1, 3)
+        self.gridLayout.addWidget(self.log_out, 2, 2, 1, 1)
+        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
+        self.pushButton.setObjectName("pushButton")
+        self.gridLayout.addWidget(self.pushButton, 2, 0, 1, 1)
+        self.log_in = QtWidgets.QPushButton(self.centralwidget)
+        self.log_in.setObjectName("log_in")
+        self.gridLayout.addWidget(self.log_in, 2, 1, 1, 1)
+        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.gridLayout.addItem(spacerItem, 1, 1, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 620, 22))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 801, 22))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -53,9 +55,9 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.log_out.setText(_translate("MainWindow", "退出"))
         self.pushButton.setText(_translate("MainWindow", "注册"))
         self.log_in.setText(_translate("MainWindow", "登录"))
-        self.log_out.setText(_translate("MainWindow", "退出"))
 
 
 if __name__ == "__main__":

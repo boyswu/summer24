@@ -13,9 +13,8 @@ from ui.user_UI import Ui_MainWindow
 from PyQt5 import QtWidgets
 import pymysql
 
-
 import cv2
-from PyQt5 import QtGui,QtCore
+from PyQt5 import QtGui
 from recognize_opencv_three import recognize_figure
 from sql import host, user, passwd, db2
 import datetime
@@ -24,8 +23,6 @@ import datetime
 class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
-
-
         self.setupUi(self)
         self.setWindowTitle("用户端图书借阅系统")
         self.cwd = os.getcwd()  # 获取当前程序文件位置
@@ -39,17 +36,9 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.return_book.clicked.connect(self.return_book_func)
 
         self.recognize_figure = recognize_figure()
-        # self.timer = QtCore.QTimer(self)
-        # self.timer.timeout.connect(self.select_sql)
-        # self.timer.start(2000)  # 每5秒更新一次
-
-
         self.path = ""
-        self.user_name = None
-        self.user_id = None
-        self.results = None
 
-    def connect_sql(self ):
+    def connect_sql(self, ):
         # 连接数据库
         db = pymysql.connect(host=host, user=user, passwd=passwd, db=db2, charset='utf8')
         cursor = db.cursor()
@@ -75,19 +64,10 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.label.setPixmap(QtGui.QPixmap.fromImage(img))
             return
 
-    def select_sql(self,results):
-
-        # user_name, feature, place, user_id, sex, phone = results[0]
-        user_name, _, _, user_id, _, _ = results[0]
-        print(user_name, user_id)
-        self.results =results
-        self.user_name = user_name
-        self.user_id = user_id
+    def select_sql(self):
         db, cursor = self.connect_sql()
-        sql = "SELECT * FROM borrowlist WHERE user_name = '{}'".format(user_name)
+        sql = "SELECT * FROM borrowlist WHERE user_name = '{}'".format("user1")
         try:
-            # 清空表格中的所有行
-            self.tableWidget.setRowCount(0)
             cursor.execute(sql)
             result = cursor.fetchall()
             # print("查询结果：", result)
@@ -103,6 +83,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         finally:
             cursor.close()
             db.close()
+
     def borrow_book_func(self):
         if not self.path:
             QtWidgets.QMessageBox.warning(self, "警告", "请先选择一本书！")
@@ -112,8 +93,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             QtWidgets.QMessageBox.warning(self, "警告", "识别失败！")
             return
         print(result)
-        user_name = self.user_name
-        user_id = self.user_id
+        user_name = "user1"
         # 连接数据库
         db, cursor = self.connect_sql()
         # 连接数据库
@@ -164,7 +144,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     if reply == QtWidgets.QMessageBox.No:
                         return
                     if reply == QtWidgets.QMessageBox.Yes:
-
+                        user_id = 1
                         book_object = "文学"
                         br_book_time = datetime.datetime.now()
                         # 获取应还时间
@@ -179,7 +159,6 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", f"{book_name}书籍借阅成功！")
-                            self.select_sql(self.results)
                         except Exception as e:
                             # 回滚
                             print(e)
@@ -230,7 +209,6 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                     cursor.execute(sql)
                                     db.commit()
                                     QtWidgets.QMessageBox.information(self, "提示", f"{book_name}借阅成功！")
-                                    self.select_sql(self.results)
                                 except Exception as e:
                                     # 回滚
                                     print(e)
@@ -253,6 +231,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 if reply == QtWidgets.QMessageBox.No:
                     return
                 if reply == QtWidgets.QMessageBox.Yes:
+                    user_id = 1
 
                     book_object = "文学"
                     br_book_time = datetime.datetime.now()
@@ -268,7 +247,6 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                         cursor.execute(sql)
                         db.commit()
                         QtWidgets.QMessageBox.information(self, "提示", f"{book_name}借阅成功！")
-                        self.select_sql(self.results)
                     except Exception as e:
                         # 回滚
                         print(e)
@@ -299,7 +277,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             QtWidgets.QMessageBox.warning(self, "警告", "识别失败！")
             return
         print(result)
-        user_name = self.user_name
+        user_name = "user1"
         # 连接数据库
         db, cursor = self.connect_sql()
         # 查询数据表里的数据
@@ -361,7 +339,6 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql_2)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", f"{user_br_book_name}书籍归还成功！")
-                            self.select_sql(self.results)
                         except Exception as e:
                             # 回滚
                             print(e)
@@ -379,7 +356,6 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql, back_book_time)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", f"{user_br_book_name}书籍归还成功！")
-                            self.select_sql(self.results)
                         except Exception as e:
                             # 回滚
                             print(e)
@@ -422,7 +398,6 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql_2)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", "归还成功！")
-                            self.select_sql(self.results)
                         except Exception as e:
                             # 回滚
                             print(e)
@@ -439,7 +414,6 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql, back_book_time)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", f"{user_br_book_name}书籍归还成功！")
-                            self.select_sql(self.results)
                         except Exception as e:
                             # 回滚
                             print(e)
@@ -470,4 +444,8 @@ if __name__ == "__main__":
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     MainWindow = UserMainWindow()
     MainWindow.show()
+
+    # 调用select_sql方法
+    MainWindow.select_sql()
+
     sys.exit(app.exec_())
