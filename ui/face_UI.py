@@ -14,32 +14,68 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(801, 600)
+        MainWindow.resize(801, 601)
         MainWindow.setStyleSheet(".QLabel{ \n"
 "         background-color: rgb(255,255,255)\n"
 "}")
+        MainWindow.setUnifiedTitleAndToolBarOnMac(False)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout.addItem(spacerItem, 0, 0, 1, 1)
         self.camera_label = QtWidgets.QLabel(self.centralwidget)
-        self.camera_label.setStyleSheet(".QLabel{ \n"
-"         background-color: rgb(255,255,255)\n"
-"}")
+        self.camera_label.setMinimumSize(QtCore.QSize(550, 0))
+        self.camera_label.setMaximumSize(QtCore.QSize(800, 400))
+        self.camera_label.setStyleSheet(".QLabel{background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(121, 226, 152, 255), stop:1 rgba(255, 255, 255, 255))\n"
+"}\n"
+"")
         self.camera_label.setText("")
         self.camera_label.setObjectName("camera_label")
-        self.gridLayout.addWidget(self.camera_label, 0, 0, 1, 3)
-        self.log_out = QtWidgets.QPushButton(self.centralwidget)
-        self.log_out.setObjectName("log_out")
-        self.gridLayout.addWidget(self.log_out, 2, 2, 1, 1)
-        self.pushButton = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton.setObjectName("pushButton")
-        self.gridLayout.addWidget(self.pushButton, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.camera_label, 0, 1, 1, 2)
+        spacerItem1 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.gridLayout.addItem(spacerItem1, 0, 3, 1, 1)
         self.log_in = QtWidgets.QPushButton(self.centralwidget)
+        self.log_in.setStyleSheet("QPushButton{\n"
+"    border:0px;\n"
+"    height:30px;\n"
+"    border-radius:15px;\n"
+"    font-family:\'Microsoft YaHei\';\n"
+"    font-size:20px;\n"
+"    color:white;\n"
+"    background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #fbc2eb, stop:1 #a6c1ee);\n"
+"    }\n"
+"\n"
+" QPushButton:hover{\n"
+"     background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #ffd2f0, stop:1 #b0cbf8);\n"
+" }\n"
+" \n"
+" QPushButton:pressed{\n"
+"     background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #e1aad2, stop:1 #92adda);\n"
+"     }")
         self.log_in.setObjectName("log_in")
-        self.gridLayout.addWidget(self.log_in, 2, 1, 1, 1)
-        spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.gridLayout.addItem(spacerItem, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.log_in, 1, 1, 1, 1)
+        self.log_out = QtWidgets.QPushButton(self.centralwidget)
+        self.log_out.setStyleSheet("QPushButton{\n"
+"    border:0px;\n"
+"    height:30px;\n"
+"    border-radius:15px;\n"
+"    font-family:\'Microsoft YaHei\';\n"
+"    font-size:20px;\n"
+"    color:white;\n"
+"    background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #fbc2eb, stop:1 #a6c1ee);\n"
+"    }\n"
+"\n"
+" QPushButton:hover{\n"
+"     background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #ffd2f0, stop:1 #b0cbf8);\n"
+" }\n"
+" \n"
+" QPushButton:pressed{\n"
+"     background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #e1aad2, stop:1 #92adda);\n"
+"     }")
+        self.log_out.setObjectName("log_out")
+        self.gridLayout.addWidget(self.log_out, 1, 2, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 801, 22))
@@ -55,9 +91,8 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.log_out.setText(_translate("MainWindow", "退出"))
-        self.pushButton.setText(_translate("MainWindow", "注册"))
         self.log_in.setText(_translate("MainWindow", "登录"))
+        self.log_out.setText(_translate("MainWindow", "退出"))
 
 
 if __name__ == "__main__":

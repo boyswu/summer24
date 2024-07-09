@@ -24,7 +24,6 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         self.new_page_Window = UserMainWindow()  # 子界面
-
         self.setWindowTitle("用户端图书借阅系统")
 
         self.update_timer = QtCore.QTimer()
@@ -39,7 +38,6 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.log_in.clicked.connect(self.log_in_system)  # 识别人脸
         self.log_out.clicked.connect(self.log_out_system)  # 登录系统
-        self.pushButton.clicked.connect(self.register_system)  # 人脸识别按钮
         #  seetaface初始化
         self.init_mask = FACE_DETECT | FACERECOGNITION | LANDMARKER5
         self.seetaFace = SeetaFace(self.init_mask)  # 初始化
@@ -59,7 +57,7 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         user_name, _, _, user_id, _, _ = self.results[0]
         recommend_book = recommend_books(user_id)
         # 调用select_sql方法
-        self.new_page_Window.transitional_information(self.results,recommend_book)
+        self.new_page_Window.transitional_information(self.results, recommend_book)
         self.new_page_Window.select_sql()
         self.new_page_Window.exit.clicked.connect(self.close_page)
 
@@ -67,6 +65,7 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # 关闭子界面
         self.new_page_Window.close()
         self.show()  # 显示当前界面
+
 
     def select_one_sql(self):
         db, cursor = self.connect_sql()
@@ -79,8 +78,7 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return results
         except:
             print("Error: unable to fetch data")
-            cursor.close()
-            db.close()
+            return None
 
     def show_camera(self):
         """显示摄像头"""
@@ -96,54 +94,6 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.camera_label.setScaledContents(True)  # 图片自适应大小
             self.camera_label.setAlignment(Qt.AlignCenter)  # 图片居中
             return
-
-    def register_system(self):
-        """
-        # 人脸识别
-        :param frame: 用户的人脸图片
-        :return:
-        """
-        _, frame = self.camera.read()  # 读取摄像头数据
-        detect_result = self.seetaFace.Detect(frame)  # 人脸检测，返回人脸检测信息数组
-        Feature = []
-        if detect_result.size == 0:  # 当未检测到人脸时
-            print("登录失败,请确认人脸是否录入!!!\n若已录入请面向摄像头切勿遮挡人脸!!!")
-            QMbox = QMessageBox()
-            QMbox.setWindowTitle("提示")
-            QMbox.setText("登录失败,请确认人脸是否录入!!!\n若已录入请面向摄像头切勿遮挡人脸!!!")
-            QMbox.exec_()
-            return  # 函数返回，避免无用的运算时间
-        for i in range(detect_result.size):  # 遍历每一个人的人脸数据
-            face = detect_result.data[i].pos
-            points = self.seetaFace.mark5(frame, face)  # 5点检测模型检测
-            feature = self.seetaFace.Extract(frame, points)  # 在一张图片中提取指定人脸关键点区域的人脸的特征值
-            feature = self.seetaFace.get_feature_numpy(feature)  # 获取feature的numpy表示数据
-            Feature.append(feature)
-
-        db, cursor = self.connect_sql()
-        sql = ("INSERT INTO name_feature(name, feature, place, id, sex, phone) "
-               "VALUES (%s, %s, %s, %s, %s, %s)")
-        try:
-            print("开始插入数据", Feature)
-
-            # 向数据库中插入数据
-            data = feature.tostring()
-            cursor.execute(sql, ('吴佳航', data, '1', '2303080206', '男', '18115211948'))
-            db.commit()
-            print("数据插入成功")
-            QMbox = QMessageBox()
-            QMbox.setWindowTitle("提示")
-            QMbox.setText("注册成功")
-            QMbox.exec_()
-        except pymysql.Error as e:
-            print(f"数据库插入失败: {e}")
-            QMbox = QMessageBox()
-            QMbox.setWindowTitle("提示")
-            QMbox.setText("数据库插入失败: {}").format(e)
-            QMbox.exec_()
-        finally:
-            cursor.close()
-            db.close()
 
     def log_in_system(self):
         # 登录系统
@@ -197,11 +147,16 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             return
 
     def log_out_system(self):
+        # self.camera_label.clear()  # 清空摄像头显示
+        # # 关闭摄像头
+        # self.camera.release()
+        # 关闭窗口
+        self.close()
+
+    def close_camera(self):
         self.camera_label.clear()  # 清空摄像头显示
         # 关闭摄像头
         self.camera.release()
-        # 关闭窗口
-        self.close()
 
 
 if __name__ == "__main__":
@@ -211,8 +166,9 @@ if __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     # 使用 qdarkstyle
-
-    app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    #
+    # app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+    app.setStyleSheet('''QWidget{background-color:rgb(193, 232, 218);}''')
     MainWindow = face_MainWindow()
     MainWindow.show()
 
