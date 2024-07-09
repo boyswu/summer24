@@ -13,9 +13,8 @@ from ui.user_UI import Ui_MainWindow
 from PyQt5 import QtWidgets
 import pymysql
 
-
 import cv2
-from PyQt5 import QtGui,QtCore
+from PyQt5 import QtGui, QtCore
 from recognize_opencv_three import recognize_figure
 from sql import host, user, passwd, db2
 import datetime
@@ -24,7 +23,6 @@ import datetime
 class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
-
 
         self.setupUi(self)
         self.setWindowTitle("用户端图书借阅系统")
@@ -42,14 +40,12 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # self.timer = QtCore.QTimer(self)
         # self.timer.timeout.connect(self.select_sql)
         # self.timer.start(2000)  # 每5秒更新一次
-
-
         self.path = ""
         self.user_name = None
         self.user_id = None
         self.results = None
 
-    def connect_sql(self ):
+    def connect_sql(self):
         # 连接数据库
         db = pymysql.connect(host=host, user=user, passwd=passwd, db=db2, charset='utf8')
         cursor = db.cursor()
@@ -66,23 +62,39 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             print("\n你选择的文件夹为:", path)
             self.path = path[0]
-            # 读取图像
-            image = cv2.imread(self.path)
-
-            img = self.recognize_figure.label_img(image)
-            # 固定 QLabel 的大小
-            self.label.setFixedSize(800, 300)  # 设置你希望的固定大小
-            self.label.setPixmap(QtGui.QPixmap.fromImage(img))
+            # # 读取图像
+            # image = cv2.imread(self.path)
+            # img = self.recognize_figure.label_img(image)
+            # # 固定 QLabel 的大小
+            # self.label.setFixedSize(800,300)  # 设置你希望的固定大小
+            # self.label.setPixmap(QtGui.QPixmap.fromImage(img))
             return
 
-    def select_sql(self,results):
-
+    def transitional_information(self, results, recommend_book):
         # user_name, feature, place, user_id, sex, phone = results[0]
         user_name, _, _, user_id, _, _ = results[0]
-        print(user_name, user_id)
-        self.results =results
+        # print(user_name, user_id)
+        self.results = results
         self.user_name = user_name
         self.user_id = user_id
+        # 将推荐书籍插入到label中
+        recommend = []
+        for i in recommend_book:
+            recommend.append(i)
+            print(i)
+        print("\n")
+        print(recommend)
+        # 将列表中的元素用换行符连接
+        recommend_text = "\n".join(recommend)
+
+        # 设置label的文本
+        self.label.setText("推荐书籍：\n" + recommend_text)
+
+
+
+    def select_sql(self):
+        user_name = self.user_name
+
         db, cursor = self.connect_sql()
         sql = "SELECT * FROM borrowlist WHERE user_name = '{}'".format(user_name)
         try:
@@ -103,6 +115,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         finally:
             cursor.close()
             db.close()
+
     def borrow_book_func(self):
         if not self.path:
             QtWidgets.QMessageBox.warning(self, "警告", "请先选择一本书！")
@@ -111,7 +124,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if not result:
             QtWidgets.QMessageBox.warning(self, "警告", "识别失败！")
             return
-        print(result)
+        # print(result)
         user_name = self.user_name
         user_id = self.user_id
         # 连接数据库
@@ -147,12 +160,12 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # 获取查询结果
             results = cursor.fetchall()
             if results:
-                print(results)
+                # print(results)
                 # 获取应还时间
                 br_book_time, back_book_time, renew_book = results[0]  # 这里0是因为只取第一行数据
-                print(f"br_book_time:{br_book_time}, back_book_time:{back_book_time}")
-                print(f"br_book_time is None: {br_book_time is None}")
-                print(f"back_book_time is None: {back_book_time is None}")
+                # print(f"br_book_time:{br_book_time}, back_book_time:{back_book_time}")
+                # print(f"br_book_time is None: {br_book_time is None}")
+                # print(f"back_book_time is None: {back_book_time is None}")
 
                 # 如果查询结果不为空，则提示用户有借阅过该书
                 # 如果查询结果为空，则提示用户没有借阅过该书
@@ -179,7 +192,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", f"{book_name}书籍借阅成功！")
-                            self.select_sql(self.results)
+                            self.select_sql()
                         except Exception as e:
                             # 回滚
                             print(e)
@@ -196,10 +209,9 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                         QtWidgets.QMessageBox.warning(self, "警告", "该书已续借过,请先归还！")
                         return
                     else:
-                        # 检测是否超过30天
+                        # 检测是否超过0.0000001天
                         now_time = datetime.datetime.now()
                         max_days = 30
-                        print(f'shengyu{now_time - br_book_time}')
                         times = datetime.timedelta(days=max_days) - (now_time - br_book_time)
                         formatted_times = str(times).split('.')[0]
                         print(formatted_times)
@@ -230,7 +242,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                                     cursor.execute(sql)
                                     db.commit()
                                     QtWidgets.QMessageBox.information(self, "提示", f"{book_name}借阅成功！")
-                                    self.select_sql(self.results)
+                                    self.select_sql()
                                 except Exception as e:
                                     # 回滚
                                     print(e)
@@ -268,7 +280,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                         cursor.execute(sql)
                         db.commit()
                         QtWidgets.QMessageBox.information(self, "提示", f"{book_name}借阅成功！")
-                        self.select_sql(self.results)
+                        self.select_sql()
                     except Exception as e:
                         # 回滚
                         print(e)
@@ -298,8 +310,9 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if not result:
             QtWidgets.QMessageBox.warning(self, "警告", "识别失败！")
             return
-        print(result)
+        # print(result)
         user_name = self.user_name
+        user_id = self.user_id
         # 连接数据库
         db, cursor = self.connect_sql()
         # 查询数据表里的数据
@@ -313,11 +326,11 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             cursor.execute(sql)
             # 获取查询结果
             results = cursor.fetchall()
-            print(f"results: {results}")
-            print(f"results is None: {results is None}")
+            # print(f"results: {results}")
+            # print(f"results is None: {results is None}")
             # 获取应还时间
             br_book_time, renew_br_book_time, back_book_time, user_br_book_name = results[0]  # 这里0是因为只取第一行数据
-            print(f"back_book_time is None: {back_book_time is None}")
+            # print(f"back_book_time is None: {back_book_time is None}")
             # 如果查询结果为空，则提示用户没有借阅该书
             if not results:
                 QtWidgets.QMessageBox.warning(self, "警告", "没有借阅该书！")
@@ -326,12 +339,12 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 QtWidgets.QMessageBox.warning(self, "警告", "该书已归还！")
                 return
             if back_book_time is None and renew_br_book_time is None:
-                # 检测是否超过30天
+                # 检测是否超过0.0000001天
                 now_time = datetime.datetime.now()
                 max_days = 30
-                print(f'shengyu{now_time - br_book_time}')
+                print(f'剩余时间{now_time - br_book_time}')
                 times = datetime.timedelta(days=max_days) - (now_time - br_book_time)
-                print(f"times: {times}")
+                # print(f"times: {times}")
 
                 # 归还书籍
                 # 弹出提示框，确认是否归还
@@ -350,7 +363,8 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             result, user_name)
                         sql_2 = ("INSERT INTO overdue_list (user_id , user_name, user_br_book_id,br_book_time,"
                                  "back_book_time,user_br_book_name,overdue_time,overdue_state) "
-                                 "VALUES ('{}', '{}', '{}','{}', '{}','{}','{}','{}')").format(1, user_name, result,
+                                 "VALUES ('{}', '{}', '{}','{}', '{}','{}','{}','{}')").format(user_id, user_name,
+                                                                                               result,
                                                                                                br_book_time,
                                                                                                back_book_time,
                                                                                                user_br_book_name,
@@ -361,12 +375,16 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql_2)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", f"{user_br_book_name}书籍归还成功！")
-                            self.select_sql(self.results)
+                            self.select_sql()
                         except Exception as e:
                             # 回滚
                             print(e)
                             db.rollback()
                             QtWidgets.QMessageBox.warning(self, "警告", "归还失败！")
+                            return
+                        finally:
+                            cursor.close()
+                            db.close()
                             return
                     else:
                         # 更改数据表中的数据
@@ -379,20 +397,24 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql, back_book_time)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", f"{user_br_book_name}书籍归还成功！")
-                            self.select_sql(self.results)
+                            self.select_sql()
                         except Exception as e:
                             # 回滚
                             print(e)
                             db.rollback()
                             QtWidgets.QMessageBox.warning(self, "警告", "归还失败！")
                             return
+                        finally:
+                            cursor.close()
+                            db.close()
+                            return
                 else:
                     return
             if back_book_time is None and renew_br_book_time is not None:
-                # 检测是否超过30天
+                # 检测是否超过0.0000001天
                 now_time = datetime.datetime.now()
                 max_days = 30
-                print(f'shengyu{now_time - br_book_time}')
+                print(f'剩余时间{now_time - br_book_time}')
                 times = datetime.timedelta(days=max_days) - (now_time - br_book_time)
                 # 归还书籍
                 # 弹出提示框，确认是否归还
@@ -411,7 +433,8 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             result, user_name)
                         sql_2 = ("INSERT INTO overdue_list (user_id , user_name, user_br_book_id,renew_br_book_time,"
                                  "back_book_time,user_br_book_name,overdue_time,overdue_state) "
-                                 "VALUES ('{}', '{}', '{}','{}', '{}','{}','{}','{}')").format(1, user_name, result,
+                                 "VALUES ('{}', '{}', '{}','{}', '{}','{}','{}','{}')").format(user_id, user_name,
+                                                                                               result,
                                                                                                renew_br_book_time,
                                                                                                back_book_time,
                                                                                                user_br_book_name,
@@ -422,12 +445,16 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql_2)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", "归还成功！")
-                            self.select_sql(self.results)
+                            self.select_sql()
                         except Exception as e:
                             # 回滚
                             print(e)
                             db.rollback()
                             QtWidgets.QMessageBox.warning(self, "警告", "归还失败！")
+                            return
+                        finally:
+                            cursor.close()
+                            db.close()
                             return
                     else:
                         # 更改数据表中的数据
@@ -439,12 +466,16 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             cursor.execute(sql, back_book_time)
                             db.commit()
                             QtWidgets.QMessageBox.information(self, "提示", f"{user_br_book_name}书籍归还成功！")
-                            self.select_sql(self.results)
+                            self.select_sql()
                         except Exception as e:
                             # 回滚
                             print(e)
                             db.rollback()
                             QtWidgets.QMessageBox.warning(self, "警告", "归还失败！")
+                            return
+                        finally:
+                            cursor.close()
+                            db.close()
                             return
                 else:
                     return
@@ -455,10 +486,10 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             QtWidgets.QMessageBox.warning(self, "警告", "归还失败!!")
             return
             # 关闭数据库连接
-        finally:
-            cursor.close()
-            db.close()
-            return
+        # finally:
+        #     cursor.close()
+        #     db.close()
+        #     return
 
 
 if __name__ == "__main__":

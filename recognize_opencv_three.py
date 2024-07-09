@@ -238,7 +238,7 @@ class recognize_figure(QtWidgets.QMainWindow, Ui_MainWindow):
                         print("没有匹配到任何模板")
                         continue
             # 在循环结束后输出最佳匹配的模板值
-            print("最终最佳匹配的模板值：", best_match)
+            # print("最终最佳匹配的模板值：", best_match)
             # 将for循环best_match的值拼接成字符串，输出到textEdit
             img = cv2.cvtColor(roi, cv2.COLOR_BGR2RGB)  # 视频色彩转换回RGB，这样才是现实的颜色
             roi = cv2.putText(img, str(best_match), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)

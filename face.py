@@ -15,6 +15,7 @@ from seetaface.api import *
 import pymysql
 from sql import host, user, passwd, db2
 from user_system import UserMainWindow
+from recommend import recommend_books
 
 
 class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -22,7 +23,7 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
 
-        self.new_page_Window = UserMainWindow() # 子界面
+        self.new_page_Window = UserMainWindow()  # 子界面
 
         self.setWindowTitle("用户端图书借阅系统")
 
@@ -44,7 +45,6 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.seetaFace = SeetaFace(self.init_mask)  # 初始化
         self.results = None  # 存储查询结果
 
-
     def connect_sql(self):
         # 连接数据库
         db = pymysql.connect(host=host, user=user, passwd=passwd, db=db2, charset='utf8')
@@ -53,16 +53,20 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def new_page(self):
         # 打开子界面
-        self.hide() # 隐藏当前界面
+        self.hide()  # 隐藏当前界面
         self.new_page_Window.show()
+        # 调用recommend_books方法
+        recommend_book = recommend_books()
         # 调用select_sql方法
-        self.new_page_Window.select_sql(self.results)
+        self.new_page_Window.transitional_information(self.results,recommend_book)
+        self.new_page_Window.select_sql()
         self.new_page_Window.exit.clicked.connect(self.close_page)
 
     def close_page(self):
         # 关闭子界面
         self.new_page_Window.close()
-        self.show() # 显示当前界面
+        self.show()  # 显示当前界面
+
     def select_one_sql(self):
         db, cursor = self.connect_sql()
         sql = "SELECT * FROM name_feature"
@@ -92,7 +96,56 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.camera_label.setAlignment(Qt.AlignCenter)  # 图片居中
             return
 
-    def request_face(self):
+    def register_system(self):
+        """
+        # 人脸识别
+        :param frame: 用户的人脸图片
+        :return:
+        """
+        _, frame = self.camera.read()  # 读取摄像头数据
+        detect_result = self.seetaFace.Detect(frame)  # 人脸检测，返回人脸检测信息数组
+        Feature = []
+        if detect_result.size == 0:  # 当未检测到人脸时
+            print("登录失败,请确认人脸是否录入!!!\n若已录入请面向摄像头切勿遮挡人脸!!!")
+            QMbox = QMessageBox()
+            QMbox.setWindowTitle("提示")
+            QMbox.setText("登录失败,请确认人脸是否录入!!!\n若已录入请面向摄像头切勿遮挡人脸!!!")
+            QMbox.exec_()
+            return  # 函数返回，避免无用的运算时间
+        for i in range(detect_result.size):  # 遍历每一个人的人脸数据
+            face = detect_result.data[i].pos
+            points = self.seetaFace.mark5(frame, face)  # 5点检测模型检测
+            feature = self.seetaFace.Extract(frame, points)  # 在一张图片中提取指定人脸关键点区域的人脸的特征值
+            feature = self.seetaFace.get_feature_numpy(feature)  # 获取feature的numpy表示数据
+            Feature.append(feature)
+
+        db, cursor = self.connect_sql()
+        sql = ("INSERT INTO name_feature(name, feature, place, id, sex, phone) "
+               "VALUES (%s, %s, %s, %s, %s, %s)")
+        try:
+            print("开始插入数据", Feature)
+
+            # 向数据库中插入数据
+            data = feature.tostring()
+            cursor.execute(sql, ('吴佳航', data, '1', '2303080206', '男', '18115211948'))
+            db.commit()
+            print("数据插入成功")
+            QMbox = QMessageBox()
+            QMbox.setWindowTitle("提示")
+            QMbox.setText("注册成功")
+            QMbox.exec_()
+        except pymysql.Error as e:
+            print(f"数据库插入失败: {e}")
+            QMbox = QMessageBox()
+            QMbox.setWindowTitle("提示")
+            QMbox.setText("数据库插入失败: {}").format(e)
+            QMbox.exec_()
+        finally:
+            cursor.close()
+            db.close()
+
+    def log_in_system(self):
+        # 登录系统
         """
         # 人脸识别
         :param frame: 用户的人脸图片
@@ -132,6 +185,7 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             QMbox.exec_()
             print(results[(similar.index(max(similar)))][0], results[(similar.index(max(similar)))][3])
             print("存在")
+            self.new_page()
         else:
             # print(results[(similar.index(max(similar)))][0], results[(similar.index(max(similar)))][3])
             QMbox = QMessageBox()
@@ -141,57 +195,6 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             print("不存在")
             return
 
-    def register_system(self):
-        """
-        # 人脸识别
-        :param frame: 用户的人脸图片
-        :return:
-        """
-        _, frame = self.camera.read()  # 读取摄像头数据
-        detect_result = self.seetaFace.Detect(frame)  # 人脸检测，返回人脸检测信息数组
-        Feature = []
-        if detect_result.size == 0:  # 当未检测到人脸时
-            print("登录失败,请确认人脸是否录入!!!\n若已录入请面向摄像头切勿遮挡人脸!!!")
-            QMbox = QMessageBox()
-            QMbox.setWindowTitle("提示")
-            QMbox.setText("登录失败,请确认人脸是否录入!!!\n若已录入请面向摄像头切勿遮挡人脸!!!")
-            QMbox.exec_()
-            return # 函数返回，避免无用的运算时间
-        for i in range(detect_result.size):  # 遍历每一个人的人脸数据
-            face = detect_result.data[i].pos
-            points = self.seetaFace.mark5(frame, face)  # 5点检测模型检测
-            feature = self.seetaFace.Extract(frame, points)  # 在一张图片中提取指定人脸关键点区域的人脸的特征值
-            feature = self.seetaFace.get_feature_numpy(feature)  # 获取feature的numpy表示数据
-            Feature.append(feature)
-
-        db, cursor = self.connect_sql()
-        sql = ("INSERT INTO name_feature(name, feature, place, id, sex, phone) "
-               "VALUES (%s, %s, %s, %s, %s, %s)")
-        try:
-            print("开始插入数据", Feature)
-
-            # 向数据库中插入数据
-            data = feature.tostring()
-            cursor.execute(sql, ('吴佳航', data, '1', '2303080206', '男', '18115211948'))
-            db.commit()
-            print("数据插入成功")
-            QMbox = QMessageBox()
-            QMbox.setWindowTitle("提示")
-            QMbox.setText("注册成功")
-            QMbox.exec_()
-        except pymysql.Error as e:
-            print(f"数据库插入失败: {e}")
-            QMbox = QMessageBox()
-            QMbox.setWindowTitle("提示")
-            QMbox.setText("数据库插入失败: {}").format(e)
-            QMbox.exec_()
-        finally:
-            cursor.close()
-            db.close()
-    def log_in_system(self):
-        # 登录系统
-        self.request_face()  # 人脸识别
-        self.new_page()
     def log_out_system(self):
         self.camera_label.clear()  # 清空摄像头显示
         # 关闭摄像头
@@ -211,7 +214,5 @@ if __name__ == "__main__":
     app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
     MainWindow = face_MainWindow()
     MainWindow.show()
-
-
 
     sys.exit(app.exec_())
