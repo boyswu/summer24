@@ -88,7 +88,7 @@ class UserMainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         recommend_text = "\n".join(recommend)
 
         # 设置label的文本
-        self.label.setText("推荐书籍：\n" + recommend_text)
+        self.label.setText("跟据你您的喜好，系统推荐以下书籍：\n" + recommend_text)
 
 
 

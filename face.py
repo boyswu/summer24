@@ -56,7 +56,8 @@ class face_MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.hide()  # 隐藏当前界面
         self.new_page_Window.show()
         # 调用recommend_books方法
-        recommend_book = recommend_books()
+        user_name, _, _, user_id, _, _ = self.results[0]
+        recommend_book = recommend_books(user_id)
         # 调用select_sql方法
         self.new_page_Window.transitional_information(self.results,recommend_book)
         self.new_page_Window.select_sql()

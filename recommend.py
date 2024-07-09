@@ -50,7 +50,7 @@ def get_recommendations(title, cosine_sim, books_df):
         return []
 
 
-def recommend_books():
+def recommend_books(user_id):
     books_df, borrow_df = connect_sql()
     print(f"books_df: {books_df}, borrow_df: {borrow_df}")
     # 数据预处理
@@ -70,7 +70,7 @@ def recommend_books():
     print(1)
     print(borrow_df['user_id'].dtype)  # 打印 user_id 列的数据类型
     # 示例：为用户推荐书籍
-    user_id = str(2303080201)
+    user_id = str(user_id)
     print(borrow_df.head())  # 打印数据框的前几行，查看数据框的内容
     print(borrow_df['user_id'].unique())  # 打印数据框中所有唯一的 user_id
     print(borrow_df['user_id'].dtype)  # 打印 user_id 列的数据类型
